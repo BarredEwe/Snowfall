@@ -1,11 +1,8 @@
 import Cocoa
 
 struct Settings {
-    private static let screenSize = NSScreen.main?.frame.size ?? .zero
-    static let snowflakeSizeRange: ClosedRange<CGFloat> = 2...10
-    static let maxSnowflakes = 1000
-    static let snowflakeSpeedRange: ClosedRange<CGFloat> = 1...3
-    static let windStrength: CGFloat = 0.3
+    static var snowflakeSizeRange: ClosedRange<Float> = 4...10
+    static var maxSnowflakes = 1000
+    static var snowflakeSpeedRange: ClosedRange<Float> = 1...3
+    static var windStrength: Float = 0.5
 }
-
-

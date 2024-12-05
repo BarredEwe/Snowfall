@@ -6,9 +6,13 @@ struct SnowfallAppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            SnowfallView()
+            SnowFallMetalView()
         }
-        .commands { }
+
+        MenuBarExtra("Makefile", systemImage: "snowflake.circle") {
+            MenuBarSettings()
+        }
+        .menuBarExtraStyle(.window)
     }
 }
 
@@ -16,6 +20,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard let window = NSApplication.shared.windows.first else { return }
 
+        configure(window)
+    }
+
+    private func configure(_ window: NSWindow) {
         window.isOpaque = true
         window.hasShadow = false
         window.backgroundColor = .clear
