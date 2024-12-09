@@ -9,7 +9,7 @@ struct SnowfallAppApp: App {
             SnowFallMetalView()
         }
 
-        MenuBarExtra("Makefile", systemImage: "snowflake.circle") {
+        MenuBarExtra("Makefile", systemImage: "snowflake") {
             MenuBarSettings()
         }
         .menuBarExtraStyle(.window)
