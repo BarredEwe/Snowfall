@@ -16,6 +16,8 @@ struct SnowfallAppApp: App {
     }
 }
 
+import CoreGraphics
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard let window = NSApplication.shared.windows.first else { return }
@@ -33,7 +35,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.styleMask.remove(.resizable)
         window.styleMask = [.borderless]
         window.setFrame(NSScreen.main?.frame ?? .zero, display: true)
-        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .transient, .stationary]
         window.makeKeyAndOrderFront(nil)
         window.ignoresMouseEvents = true
     }

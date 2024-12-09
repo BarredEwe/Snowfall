@@ -22,7 +22,7 @@ class MouseTrackingNSView: NSView {
 
         let trackingArea = NSTrackingArea(
             rect: bounds,
-            options: [.activeAlways, .mouseMoved, .inVisibleRect],
+            options: [.activeAlways, .mouseMoved, .mouseEnteredAndExited, .inVisibleRect, .activeWhenFirstResponder],
             owner: self,
             userInfo: nil
         )

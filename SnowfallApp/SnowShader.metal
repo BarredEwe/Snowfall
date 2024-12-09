@@ -14,19 +14,20 @@ struct VertexOut {
     float4 color;
 };
 
+float2 convert_to_metal_coordinates(float2 point, float2 viewSize) {
+    float2 inverseViewSize = 1 / viewSize;
+    return float2((2.0f * point.x * inverseViewSize.x) - 1.0f, (2.0f * -point.y * inverseViewSize.y) + 1.0f);
+}
+
 vertex VertexOut vertex_main(const device Snowflake *snowflakes [[buffer(0)]],
                              constant float2 &screenSize[[buffer(1)]],
                              uint vertexID [[vertex_id]]) {
-    VertexOut out;
-
-    float2 position = snowflakes[vertexID].position;
+    float2 position = convert_to_metal_coordinates(snowflakes[vertexID].position, screenSize);
     float size = snowflakes[vertexID].size;
     float4 color = snowflakes[vertexID].color;
 
-    out.position = float4(position.x / screenSize.x * 2.0 - 1.0,
-                          (1.0 - position.y / screenSize.y) * 2.0 - 1.0,
-                          0.0,
-                          1.0);
+    VertexOut out;
+    out.position = float4(position, 0, 1);
     out.pointSize = size;
     out.color = color;
 
@@ -34,7 +35,7 @@ vertex VertexOut vertex_main(const device Snowflake *snowflakes [[buffer(0)]],
 }
 
 fragment float4 fragment_main(VertexOut fragData [[stage_in]],
-                             float2 pointCoord  [[point_coord]]) {
+                              float2 pointCoord  [[point_coord]]) {
     if (length(pointCoord - float2(0.5)) > 0.5) {
         discard_fragment();
     }

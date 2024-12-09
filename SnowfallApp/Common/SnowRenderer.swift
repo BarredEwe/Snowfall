@@ -7,9 +7,10 @@ class SnowRenderer: NSObject, MTKViewDelegate {
     private var commandQueue: MTLCommandQueue!
     private var particleBuffer: MTLBuffer!
     private var pipelineState: MTLRenderPipelineState!
+
     private var snowflakes: [Snowflake] = []
 
-    var mousePosition: simd_float2 = .zero
+    var mousePosition: simd_float2 = simd_float2(.infinity, .infinity)
     var screenSize: simd_float2 = .zero
 
     private let influenceRadius: Float = 50.0
@@ -83,8 +84,14 @@ class SnowRenderer: NSObject, MTKViewDelegate {
 
         let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(pipelineState)
+
+        // Snowflakes
         renderEncoder.setVertexBuffer(particleBuffer, offset: 0, index: 0)
+
+        // ScreenSize
         renderEncoder.setVertexBytes(&screenSize, length: MemoryLayout<SIMD2<Float>>.stride, index: 1)
+        renderEncoder.setFragmentBytes(&screenSize, length: MemoryLayout<SIMD2<Float>>.stride, index: 1)
+
         renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: Settings.maxSnowflakes)
         renderEncoder.endEncoding()
 
@@ -96,6 +103,12 @@ class SnowRenderer: NSObject, MTKViewDelegate {
 
     func updateSnowflakes() {
         let radius = influenceRadius
+        var activeWindowRect: CGRect?
+
+        if Settings.windowInteraction {
+            activeWindowRect = WindowInfo().getActiveWindowRect()
+        }
+
         for i in 0..<Settings.maxSnowflakes {
             var snowflake = snowflakes[i]
             let dx = mousePosition.x - snowflake.position.x
@@ -112,9 +125,16 @@ class SnowRenderer: NSObject, MTKViewDelegate {
             }
 
             snowflake.position.y += snowflake.velocity.y
-            snowflake.position.x += Float.random(in: 0.1...1) * Settings.windStrength
+            snowflake.position.x += Float.random(in: 0.1...0.5) * Settings.windStrength
 
-            if snowflake.position.y - snowflake.size > screenSize.y {
+            if Settings.windowInteraction,
+               let activeWindowRect,
+               activeWindowRect.contains(CGPoint(x: CGFloat(snowflake.position.x), y: CGFloat(snowflake.position.y))) {
+                snowflake.position.y = Float(activeWindowRect.origin.y)
+                snowflake.size -= Settings.semltingSpeed
+            }
+
+            if (snowflake.position.y - snowflake.size > screenSize.y) || !(snowflake.size > Settings.snowflakeSizeRange.lowerBound - 1) {
                 snowflake.clear(for: screenSize)
             }
 
@@ -128,24 +148,34 @@ class SnowRenderer: NSObject, MTKViewDelegate {
     }
 }
 
-// MARK: Extensions
+import Cocoa
+import CoreGraphics
 
-extension simd_float2 {
-    static var velocity: simd_float2 {
-        simd_float2(Float.random(in: -1...1), Float.random(in: Settings.snowflakeSpeedRange))
-    }
-}
+class WindowInfo {
+    let statusBarSize = 38.0
 
-extension Float {
-    static var size: Float {
-        Float.random(in: Settings.snowflakeSizeRange)
-    }
-}
+    func getActiveWindowRect() -> CGRect? {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        let windowListInfo = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? []
 
-extension simd_float4 {
-    static func color(for size: Float) -> simd_float4 {
-        let normalizedSize = (size - Settings.snowflakeSizeRange.lowerBound) / (Settings.snowflakeSizeRange.upperBound - Settings.snowflakeSizeRange.lowerBound)
-        let opacity = Swift.max(0.1, 1.0 - normalizedSize * 0.8)
-        return simd_float4(1.0, 1.0, 1.0, opacity)
+        for windowInfo in windowListInfo {
+            guard let layer = windowInfo[kCGWindowLayer as String] as? Int,
+                  layer == 0,
+//                  let ownerName = windowInfo[kCGWindowOwnerName as String] as? String,
+                  let windowBounds = windowInfo[kCGWindowBounds as String] as? [String: Any],
+                  let x = windowBounds["X"] as? CGFloat,
+                  let y = windowBounds["Y"] as? CGFloat,
+                  let width = windowBounds["Width"] as? CGFloat,
+//                  let height = windowBounds["Height"] as? CGFloat,
+                  !(x == 0 && (y == statusBarSize || y == 0)), width >= 50 else { continue }
+
+//            print("App: \(ownerName)")
+//            print("Position: (\(x), \(y))")
+//            print("Size: \(width)x\(height)")
+//            print("----------------------")
+
+            return CGRect(x: x, y: y, width: width, height: 50.0)
+        }
+        return nil
     }
 }
