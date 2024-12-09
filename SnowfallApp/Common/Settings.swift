@@ -1,47 +1,33 @@
 import Cocoa
 import SwiftUI
 
-struct Settings {
-    @AppStorage("snowflakeSizeRange")
-    static var snowflakeSizeRange: ClosedRange<Float> = 3...13
-    @AppStorage("maxSnowflakes")
-    static var maxSnowflakes = 1000
-    @AppStorage("snowflakeSpeedRange")
-    static var snowflakeSpeedRange: ClosedRange<Float> = 1...3
-    @AppStorage("windStrength")
-    static var windStrength: Float = 2.5
-    @AppStorage("semltingSpeed")
-    static var semltingSpeed: Float = 0.05
-    @AppStorage("windowInteraction")
-    static var windowInteraction: Bool = true
+class Settings: Codable {
+
+    static var shared = Settings()
+
+    var snowflakeSizeRange: ClosedRange<Float> = 3...13
+    var maxSnowflakes = 1000
+    var snowflakeSpeedRange: ClosedRange<Float> = 1...3
+    var windStrength: Float = 2.5
+    var semltingSpeed: Float = 0.05
+    var windowInteraction: Bool = true
+
+    private init() {}
 
     static func reset() {
         UserDefaults.standard.dictionaryRepresentation().keys.forEach({ UserDefaults.standard.removeObject(forKey: $0) })
+        load()
     }
-}
 
-// MARK: - Extensions
-
-extension Float: @retroactive RawRepresentable {
-    public var rawValue: String {
-        String(self)
+    static func save() {
+        if let data = try? JSONEncoder().encode(shared) {
+            UserDefaults().set(data, forKey: "settings")
+        }
     }
-    
-    public typealias RawValue = String
 
-    public init?(rawValue: String) {
-        self = Float(rawValue)!
-    }
-}
+    static func load() {
+        let settings = UserDefaults().data(forKey: "settings").flatMap({ try? JSONDecoder().decode(Settings.self, from: $0) })
+        shared = settings ?? Settings()
 
-extension ClosedRange: @retroactive RawRepresentable where Bound == Float {
-    public init?(rawValue: String) {
-        let split = rawValue.split(separator: "...")
-
-        self.init(uncheckedBounds: (lower: Float(split[0])!, upper: Float(split[1])!))
-    }
-    
-    public var rawValue: String {
-        return String(lowerBound) + "..." + String(upperBound)
     }
 }

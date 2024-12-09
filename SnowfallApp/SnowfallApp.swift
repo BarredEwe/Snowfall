@@ -4,6 +4,10 @@ import SwiftUI
 struct SnowfallAppApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    init() {
+        Settings.load()
+    }
+
     var body: some Scene {
         WindowGroup {
             SnowFallMetalView()

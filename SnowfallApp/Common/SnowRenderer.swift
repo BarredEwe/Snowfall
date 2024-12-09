@@ -92,7 +92,7 @@ class SnowRenderer: NSObject, MTKViewDelegate {
         renderEncoder.setVertexBytes(&screenSize, length: MemoryLayout<SIMD2<Float>>.stride, index: 1)
         renderEncoder.setFragmentBytes(&screenSize, length: MemoryLayout<SIMD2<Float>>.stride, index: 1)
 
-        renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: Settings.maxSnowflakes)
+        renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: Settings.shared.maxSnowflakes)
         renderEncoder.endEncoding()
 
         commandBuffer.present(drawable)
@@ -105,11 +105,11 @@ class SnowRenderer: NSObject, MTKViewDelegate {
         let radius = influenceRadius
         var activeWindowRect: CGRect?
 
-        if Settings.windowInteraction {
+        if Settings.shared.windowInteraction {
             activeWindowRect = WindowInfo().getActiveWindowRect()
         }
 
-        for i in 0..<Settings.maxSnowflakes {
+        for i in 0..<Settings.shared.maxSnowflakes {
             var snowflake = snowflakes[i]
             let dx = mousePosition.x - snowflake.position.x
             let dy = mousePosition.y - snowflake.position.y
@@ -125,24 +125,24 @@ class SnowRenderer: NSObject, MTKViewDelegate {
             }
 
             snowflake.position.y += snowflake.velocity.y
-            snowflake.position.x += Float.random(in: 0.1...0.5) * Settings.windStrength
+            snowflake.position.x += Float.random(in: 0.1...0.5) * Settings.shared.windStrength
 
-            if Settings.windowInteraction,
+            if Settings.shared.windowInteraction,
                let activeWindowRect,
                activeWindowRect.contains(CGPoint(x: CGFloat(snowflake.position.x), y: CGFloat(snowflake.position.y))) {
                 snowflake.position.y = Float(activeWindowRect.origin.y)
-                snowflake.size -= Settings.semltingSpeed
+                snowflake.size -= Settings.shared.semltingSpeed
             }
 
-            if (snowflake.position.y - snowflake.size > screenSize.y) || !(snowflake.size > Settings.snowflakeSizeRange.lowerBound - 1) {
+            if (snowflake.position.y - snowflake.size > screenSize.y) || !(snowflake.size > Settings.shared.snowflakeSizeRange.lowerBound - 1) {
                 snowflake.clear(for: screenSize)
             }
 
             snowflakes[i] = snowflake
         }
 
-        let pointer = particleBuffer.contents().bindMemory(to: Snowflake.self, capacity: Settings.maxSnowflakes)
-        for i in 0..<Settings.maxSnowflakes {
+        let pointer = particleBuffer.contents().bindMemory(to: Snowflake.self, capacity: Settings.shared.maxSnowflakes)
+        for i in 0..<Settings.shared.maxSnowflakes {
             pointer[i] = snowflakes[i]
         }
     }

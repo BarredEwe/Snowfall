@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct MenuBarSettings: View {
-    @State var speed: ClosedRange<Float> = Settings.snowflakeSpeedRange
-    @State var size: ClosedRange<Float> = Settings.snowflakeSizeRange
-    @State var maxSnowflakes: Float = Float(Settings.maxSnowflakes)
-    @State var windowInteraction: Bool = Settings.windowInteraction
-    @State var windStrength: Float = Settings.windStrength * 1000
+    @State var speed: ClosedRange<Float> = Settings.shared.snowflakeSpeedRange
+    @State var size: ClosedRange<Float> = Settings.shared.snowflakeSizeRange
+    @State var maxSnowflakes: Float = Float(Settings.shared.maxSnowflakes)
+    @State var windowInteraction: Bool = Settings.shared.windowInteraction
+    @State var windStrength: Float = Settings.shared.windStrength * 1000
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -45,30 +45,35 @@ struct MenuBarSettings: View {
 
                 Button("Reset", role: .destructive) {
                     Settings.reset()
-                    speed = Settings.snowflakeSpeedRange
-                    size = Settings.snowflakeSizeRange
-                    maxSnowflakes = Float(Settings.maxSnowflakes)
-                    windowInteraction = Settings.windowInteraction
-                    windStrength = Settings.windStrength * 1000
+                    speed = Settings.shared.snowflakeSpeedRange
+                    size = Settings.shared.snowflakeSizeRange
+                    maxSnowflakes = Float(Settings.shared.maxSnowflakes)
+                    windowInteraction = Settings.shared.windowInteraction
+                    windStrength = Settings.shared.windStrength * 1000
                 }
             }
         }
         .frame(maxWidth: 250)
         .padding()
         .onChange(of: speed) { _, newValue in
-            Settings.snowflakeSpeedRange = newValue
+            Settings.shared.snowflakeSpeedRange = newValue
+            Settings.save()
         }
         .onChange(of: size) { _, newValue in
-            Settings.snowflakeSizeRange = newValue
+            Settings.shared.snowflakeSizeRange = newValue
+            Settings.save()
         }
         .onChange(of: maxSnowflakes) { _, newValue in
-            Settings.maxSnowflakes = Int(newValue)
+            Settings.shared.maxSnowflakes = Int(newValue)
+            Settings.save()
         }
         .onChange(of: windowInteraction) { _, newValue in
-            Settings.windowInteraction = newValue
+            Settings.shared.windowInteraction = newValue
+            Settings.save()
         }
         .onChange(of: windStrength) { _, newValue in
-            Settings.windStrength = newValue / 1000
+            Settings.shared.windStrength = newValue / 1000
+            Settings.save()
         }
     }
 }
