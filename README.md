@@ -4,7 +4,7 @@
 
 Simple interactive snowfall for Mac OS app written on SwiftUI. 
 
-<img src="https://s13.gifyu.com/images/SJ6Gp.gif">
+<img src="Resources/Snowfall-example.gif"/>
 
 ## Installation
 
