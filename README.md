@@ -4,7 +4,7 @@
 
 Simple interactive snowfall for Mac OS app written on SwiftUI. 
 
-<img src="https://i.ibb.co/qNKWSGY/Screen-Recording2024-12-02at19-25-32-ezgif-com-video-to-gif-converter.gif">
+<img src="https://s13.gifyu.com/images/SJ6Gp.gif">
 
 ## Installation
 
