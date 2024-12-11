@@ -28,6 +28,5 @@ class Settings: Codable {
     static func load() {
         let settings = UserDefaults().data(forKey: "settings").flatMap({ try? JSONDecoder().decode(Settings.self, from: $0) })
         shared = settings ?? Settings()
-
     }
 }

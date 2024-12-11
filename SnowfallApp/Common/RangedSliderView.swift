@@ -89,7 +89,7 @@ struct RangedSliderView: View {
                 .offset(y: -20)
             Circle()
                 .frame(width: 20, height: 20)
-                .foregroundColor(Color.gray)
+                .foregroundColor(Color(nsColor: NSColor.controlBackgroundColor))
                 .shadow(color: Color.black.opacity(0.16), radius: 8, x: 0, y: 2)
                 .contentShape(Rectangle())
         }

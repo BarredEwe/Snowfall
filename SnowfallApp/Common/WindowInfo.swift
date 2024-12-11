@@ -2,11 +2,14 @@ import Cocoa
 import CoreGraphics
 
 class WindowInfo {
-    let statusBarSize = 38.0
+    private let statusBarSize = 38.0
+    private let lauchpadLayer = 27
 
     func getActiveWindowRect() -> CGRect? {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         let windowListInfo = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? []
+
+        guard !isLaunchpadVisible() else { return nil }
 
         for windowInfo in windowListInfo {
             guard let layer = windowInfo[kCGWindowLayer as String] as? Int,
@@ -23,5 +26,20 @@ class WindowInfo {
             }
         }
         return nil
+    }
+
+    func isLaunchpadVisible() -> Bool {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        let windowList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? []
+
+        for window in windowList {
+            if let ownerName = window["kCGWindowOwnerName"] as? String, ownerName == "Dock",
+               let layer = window["kCGWindowLayer"] as? Int {
+                if layer == lauchpadLayer {
+                    return true
+                }
+            }
+        }
+        return false
     }
 }
