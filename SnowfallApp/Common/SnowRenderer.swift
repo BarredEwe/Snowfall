@@ -147,35 +147,3 @@ class SnowRenderer: NSObject, MTKViewDelegate {
         }
     }
 }
-
-import Cocoa
-import CoreGraphics
-
-class WindowInfo {
-    let statusBarSize = 38.0
-
-    func getActiveWindowRect() -> CGRect? {
-        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
-        let windowListInfo = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? []
-
-        for windowInfo in windowListInfo {
-            guard let layer = windowInfo[kCGWindowLayer as String] as? Int,
-                  layer == 0,
-//                  let ownerName = windowInfo[kCGWindowOwnerName as String] as? String,
-                  let windowBounds = windowInfo[kCGWindowBounds as String] as? [String: Any],
-                  let x = windowBounds["X"] as? CGFloat,
-                  let y = windowBounds["Y"] as? CGFloat,
-                  let width = windowBounds["Width"] as? CGFloat,
-//                  let height = windowBounds["Height"] as? CGFloat,
-                  !(x == 0 && (y == statusBarSize || y == 0)), width >= 50 else { continue }
-
-//            print("App: \(ownerName)")
-//            print("Position: (\(x), \(y))")
-//            print("Size: \(width)x\(height)")
-//            print("----------------------")
-
-            return CGRect(x: x, y: y, width: width, height: 50.0)
-        }
-        return nil
-    }
-}
