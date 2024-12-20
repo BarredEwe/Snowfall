@@ -9,7 +9,7 @@ struct SnowfallAppApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "firstScreen") {
             SnowFallMetalView()
         }
 
@@ -24,12 +24,21 @@ import CoreGraphics
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+       
         guard let window = NSApplication.shared.windows.first else { return }
-
         configure(window)
+        
+        guard NSScreen.screens.count > 1 else { return }
+        var screens = NSScreen.screens
+        screens.removeFirst()
+        screens.forEach { screen in
+            let controller = NSHostingController(rootView: SnowFallMetalView())
+            let inactiveWindow = NSWindow(contentViewController: controller)
+            configure(inactiveWindow, inactiveScreen: screen)
+        }
     }
 
-    private func configure(_ window: NSWindow) {
+    private func configure(_ window: NSWindow, inactiveScreen: NSScreen? = nil) {
         window.isOpaque = true
         window.hasShadow = false
         window.backgroundColor = .clear
@@ -38,7 +47,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.styleMask.remove(.miniaturizable)
         window.styleMask.remove(.resizable)
         window.styleMask = [.borderless]
-        window.setFrame(NSScreen.main?.frame ?? .zero, display: true)
+        if inactiveScreen == nil {
+            window.setFrame(NSScreen.screens.first?.frame ?? .zero, display: true)
+        } else {
+            window.setFrame(inactiveScreen?.frame ?? .zero, display: true)
+        }
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .transient, .stationary]
         window.makeKeyAndOrderFront(nil)
         window.ignoresMouseEvents = true

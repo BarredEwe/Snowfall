@@ -36,13 +36,6 @@ struct MenuBarSettings: View {
             Toggle("Snow interact with window", isOn: $windowInteraction)
 
             HStack {
-                Button("Close app") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .buttonStyle(.borderless)
-
-                Spacer()
-
                 Button("Reset", role: .destructive) {
                     Settings.reset()
                     speed = Settings.shared.snowflakeSpeedRange
@@ -51,6 +44,13 @@ struct MenuBarSettings: View {
                     windowInteraction = Settings.shared.windowInteraction
                     windStrength = Settings.shared.windStrength * 1000
                 }
+                
+                Spacer()
+                
+                Button("Close app") {
+                    NSApplication.shared.terminate(nil)
+                }
+                .buttonStyle(.borderless)
             }
         }
         .frame(maxWidth: 250)
