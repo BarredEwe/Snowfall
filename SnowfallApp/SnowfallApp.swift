@@ -26,8 +26,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
        
         guard let window = NSApplication.shared.windows.first else { return }
-        let windowCount = NSApplication.shared.windows
-        print(windowCount)
         configure(window)
         
         guard NSScreen.screens.count > 1 else { return }
@@ -36,7 +34,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         screens.forEach { screen in
             let controller = NSHostingController(rootView: SnowFallMetalView())
             let inactiveWindow = NSWindow(contentViewController: controller)
-            print(inactiveWindow)
             configure(inactiveWindow, inactiveScreen: screen)
         }
     }
