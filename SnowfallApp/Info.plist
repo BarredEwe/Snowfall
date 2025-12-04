@@ -5,7 +5,7 @@
 	<key>NSFullScreenModeAllScreens</key>
 	<true/>
 	<key>NSHighResolutionCapable</key>
-	<false/>
+	<true/>
 	<key>NSRequiresAquaSystemAppearance</key>
 	<false/>
 </dict>

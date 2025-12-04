@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct SnowfallAppApp: App {
+struct SnowfallApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
@@ -9,51 +9,52 @@ struct SnowfallAppApp: App {
     }
 
     var body: some Scene {
-        WindowGroup(id: "firstScreen") {
-            SnowFallMetalView()
-        }
-
-        MenuBarExtra("Makefile", systemImage: "snowflake") {
+        MenuBarExtra("Snowfall", systemImage: "snowflake") {
             MenuBarSettings()
         }
         .menuBarExtraStyle(.window)
     }
 }
 
-import CoreGraphics
+import Cocoa
+import MetalKit
+import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    var snowWindows: [NSWindow] = []
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-       
-        guard let window = NSApplication.shared.windows.first else { return }
-        configure(window)
+        setupSnowWindows()
+        NotificationCenter.default.addObserver(self, selector: #selector(setupSnowWindows), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+    }
+    
+    @objc private func setupSnowWindows() {
+        snowWindows.forEach { $0.close() }
+        snowWindows.removeAll()
         
-        guard NSScreen.screens.count > 1 else { return }
-        var screens = NSScreen.screens
-        screens.removeFirst()
-        screens.forEach { screen in
-            let controller = NSHostingController(rootView: SnowFallMetalView())
-            let inactiveWindow = NSWindow(contentViewController: controller)
-            configure(inactiveWindow, inactiveScreen: screen)
+        for screen in NSScreen.screens {
+            createSnowWindow(for: screen)
         }
     }
-
-    private func configure(_ window: NSWindow, inactiveScreen: NSScreen? = nil) {
-        window.isOpaque = true
+    
+    private func createSnowWindow(for screen: NSScreen) {
+        let screenRect = screen.frame
+        
+        let window = NSWindow(contentRect: screenRect, styleMask: [.borderless], backing: .buffered, defer: false)
+        
+        let metalController = MetalSnowViewController(screenSize: screenRect.size)
+        window.contentViewController = metalController
+        
+        window.isOpaque = false
         window.hasShadow = false
         window.backgroundColor = .clear
         window.level = .screenSaver
-        window.styleMask.remove(.closable)
-        window.styleMask.remove(.miniaturizable)
-        window.styleMask.remove(.resizable)
-        window.styleMask = [.borderless]
-        if inactiveScreen == nil {
-            window.setFrame(NSScreen.screens.first?.frame ?? .zero, display: true)
-        } else {
-            window.setFrame(inactiveScreen?.frame ?? .zero, display: true)
-        }
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .transient, .stationary]
-        window.makeKeyAndOrderFront(nil)
         window.ignoresMouseEvents = true
+        window.setFrame(screenRect, display: true)
+        
+        window.orderFront(nil)
+        
+        snowWindows.append(window)
     }
 }
