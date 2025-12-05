@@ -1,0 +1,54 @@
+name: Release and Update Homebrew
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      
+      - name: Build and Archive
+        run: |
+          xcodebuild -scheme SnowfallApp \
+            -configuration Release \
+            -archivePath build/Snowfall.xcarchive \
+            archive
+          
+          xcodebuild -exportArchive \
+            -archivePath build/Snowfall.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist ExportOptions.plist
+          
+          cd build/export && zip -r ../Snowfall.zip Snowfall.app
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./build/Snowfall.zip
+          asset_name: Snowfall.zip
+          asset_content_type: application/zip
+  
+  update-homebrew:
+    needs: build-and-release
+    runs-on: macos-latest
+    
+    steps:
+      - name: Update Homebrew Cask
+        uses: macauley/action-homebrew-bump-cask@v1
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          tap: BarredEwe/homebrew-cask
+          cask: snowfall

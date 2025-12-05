@@ -18,7 +18,6 @@ struct SnowfallApp: App {
 
 import Cocoa
 import MetalKit
-import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var snowWindows: [NSWindow] = []
@@ -51,6 +50,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.level = .screenSaver
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .transient, .stationary]
         window.ignoresMouseEvents = true
+        window.isReleasedWhenClosed = false
         window.setFrame(screenRect, display: true)
         
         window.orderFront(nil)

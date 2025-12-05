@@ -7,7 +7,7 @@ class WindowInfo {
 
     func getActiveWindowRect() -> CGRect? {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
-        let windowListInfo = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? []
+        guard let windowListInfo = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return nil }
 
         guard !isLaunchpadVisible() else { return nil }
 
