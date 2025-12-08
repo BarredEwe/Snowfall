@@ -21,8 +21,11 @@ struct Uniforms {
     float time;
     float deltaTime;
     float windStrength;
+    float minSize;
+    float maxSize;
     bool isWindowInteractionEnabled;
 };
+
 
 float random(uint seed, float time) {
     return fract(sin(float(seed) * 12.9898 + time) * 43758.5453);
@@ -57,7 +60,8 @@ kernel void updateSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
             float widthSpread = uniforms.screenSize.x + 400.0;
             flake.position.x = (rnd * widthSpread) - 200.0;
             
-            flake.size = 3.0 + random(id + 1, uniforms.time) * 7.0;
+            float sizeRange = uniforms.maxSize - uniforms.minSize;
+            flake.size = uniforms.minSize + random(id + 1, uniforms.time) * sizeRange;
         }
         
     } else {

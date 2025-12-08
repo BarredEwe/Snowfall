@@ -10,6 +10,8 @@ struct SnowUniforms {
     var time: Float
     var deltaTime: Float
     var windStrength: Float
+    var minSize: Float
+    var maxSize: Float
     var isWindowInteractionEnabled: Bool
     var _padding: (Bool, Bool, Bool) = (false, false, false)
 }
@@ -119,6 +121,8 @@ class SnowRenderer: NSObject, MTKViewDelegate {
             time: Float(currentTime),
             deltaTime: deltaTime,
             windStrength: Settings.shared.windStrength,
+            minSize: Settings.shared.snowflakeSizeRange.lowerBound,
+            maxSize: Settings.shared.snowflakeSizeRange.upperBound,
             isWindowInteractionEnabled: Settings.shared.windowInteraction
         )
         

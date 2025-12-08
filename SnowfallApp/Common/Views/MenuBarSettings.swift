@@ -61,11 +61,11 @@ struct MenuBarSettings: View {
                 }
                 HStack {
                     Text("Min").font(.caption).foregroundStyle(.secondary)
-                    Slider(value: $minSize, in: 1...15) { _ in switchToCustom() }
+                    Slider(value: $minSize, in: 1...25) { _ in switchToCustom() }
                 }
                 HStack {
                     Text("Max").font(.caption).foregroundStyle(.secondary)
-                    Slider(value: $maxSize, in: 1...15) { _ in switchToCustom() }
+                    Slider(value: $maxSize, in: 1...25) { _ in switchToCustom() }
                 }
             }
             

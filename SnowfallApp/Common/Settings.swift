@@ -57,19 +57,19 @@ extension SnowPreset {
         case .light:
             settings.maxSnowflakes = 800
             settings.snowflakeSpeedRange = 0.2...1.5
-            settings.snowflakeSizeRange = 2...6
+            settings.snowflakeSizeRange = 2...12
             settings.windStrength = 0.5
             
         case .comfort:
             settings.maxSnowflakes = 2000
             settings.snowflakeSpeedRange = 0.5...3.0
-            settings.snowflakeSizeRange = 3...10
+            settings.snowflakeSizeRange = 3...15
             settings.windStrength = 1.0
             
         case .blizzard:
             settings.maxSnowflakes = 6000
             settings.snowflakeSpeedRange = 2.0...8.0
-            settings.snowflakeSizeRange = 2...8
+            settings.snowflakeSizeRange = 2...20
             settings.windStrength = 4.0
             
         case .custom:
