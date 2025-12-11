@@ -15,6 +15,7 @@ struct SnowUniforms {
     var minSpeed: Float
     var maxSpeed: Float
     var isWindowInteractionEnabled: Bool
+    var particleCount: Float
 }
 
 final class SnowRenderer: NSObject {
@@ -140,7 +141,8 @@ final class SnowRenderer: NSObject {
             maxSize: Settings.shared.snowflakeSizeRange.upperBound,
             minSpeed: Settings.shared.snowflakeSpeedRange.lowerBound,
             maxSpeed: Settings.shared.snowflakeSpeedRange.upperBound,
-            isWindowInteractionEnabled: Settings.shared.windowInteraction
+            isWindowInteractionEnabled: Settings.shared.windowInteraction,
+            particleCount: Float(particleCount)
         )
     }
     

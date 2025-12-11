@@ -4,10 +4,6 @@ import SwiftUI
 struct SnowfallApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
-    init() {
-        Settings.load()
-    }
-
     var body: some Scene {
         MenuBarExtra("Snowfall", systemImage: "snowflake") {
             MenuBarSettings()

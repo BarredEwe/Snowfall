@@ -12,8 +12,8 @@ enum SnowPreset: String, CaseIterable, Codable {
     case custom = "Свой"
 }
 
-class Settings: Codable {
-    static var shared = Settings()
+final class Settings: Codable {
+    static let shared = Settings()
     
     var currentPreset: SnowPreset = .comfort
     var isPaused: Bool = false
@@ -26,28 +26,46 @@ class Settings: Codable {
     var meltingSpeed: Float = 0.05
     var windowInteraction: Bool = true
     
-    private init() {}
-    
-    static func reset() {
-        UserDefaults.standard.dictionaryRepresentation().keys.forEach({ UserDefaults.standard.removeObject(forKey: $0) })
+    private init() {
         load()
     }
     
-    static func save() {
-        if let data = try? JSONEncoder().encode(shared) {
-            UserDefaults().set(data, forKey: "settings")
-        }
-    }
-    
-    static func load() {
-        let settings = UserDefaults().data(forKey: "settings").flatMap({ try? JSONDecoder().decode(Settings.self, from: $0) })
-        shared = settings ?? Settings()
-    }
-    
     func applyPreset(_ preset: SnowPreset) {
-        self.currentPreset = preset
+        currentPreset = preset
         preset.apply(to: self)
-        Settings.save()
+        save()
+    }
+    
+    func reset() {
+        UserDefaults.standard.dictionaryRepresentation().keys.forEach {
+            UserDefaults.standard.removeObject(forKey: $0)
+        }
+        load()
+    }
+    
+    func save() {
+        guard let data = try? JSONEncoder().encode(self) else { return }
+        
+        UserDefaults.standard.set(data, forKey: "settings")
+    }
+    
+    private func load() {
+        guard let data = UserDefaults.standard.data(forKey: "settings"),
+              let settings = try? JSONDecoder().decode(Settings.self, from: data) else {
+            applyPreset(.comfort)
+            return
+        }
+
+        currentPreset = settings.currentPreset
+        isPaused = settings.isPaused
+        displayMode = settings.displayMode
+        pauseInFullscreen = settings.pauseInFullscreen
+        snowflakeSizeRange = settings.snowflakeSizeRange
+        maxSnowflakes = settings.maxSnowflakes
+        snowflakeSpeedRange = settings.snowflakeSpeedRange
+        windStrength = settings.windStrength
+        meltingSpeed = settings.meltingSpeed
+        windowInteraction = settings.windowInteraction
     }
 }
 

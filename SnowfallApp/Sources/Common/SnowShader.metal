@@ -26,6 +26,7 @@ struct Uniforms {
     float minSpeed;
     float maxSpeed;
     bool isWindowInteractionEnabled;
+    float particleCount;
 };
 
 float random(uint seed, float time) {
@@ -58,6 +59,8 @@ kernel void initializeSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
 kernel void updateSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
                               constant Uniforms &uniforms [[buffer(1)]],
                               uint id [[thread_position_in_grid]]) {
+    if (float(id) >= uniforms.particleCount) return;
+    
     device Snowflake &flake = snowflakes[id];
     float timeFactor = uniforms.deltaTime * 60.0;
     

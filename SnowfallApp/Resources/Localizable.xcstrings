@@ -2,16 +2,16 @@
   "sourceLanguage" : "en",
   "strings" : {
     "" : {
-      "shouldTranslate" : false
+
     },
     "%lld" : {
-      "shouldTranslate" : false
+
     },
     "Max" : {
-      "shouldTranslate" : false
+
     },
     "Min" : {
-      "shouldTranslate" : false
+
     },
     "Snowfall" : {
       "shouldTranslate" : false
