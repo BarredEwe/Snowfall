@@ -42,4 +42,10 @@ class WindowInfo {
         }
         return false
     }
+    
+    func cast(from global: CGRect, to local: CGRect, point: CGPoint) -> CGPoint {
+        let x = point.x - local.origin.x
+        let y = point.y - (global.height - (local.origin.y + local.height))
+        return CGPoint(x: x, y: y)
+    }
 }

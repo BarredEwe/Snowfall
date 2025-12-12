@@ -4,17 +4,19 @@ import MetalKit
 class MetalSnowViewController: NSViewController {
     private let mtkView = MTKView()
     private var renderer: SnowRenderer!
-    private let initialSize: CGSize
+    private let screenRect: CGRect
+    private let globalRect: CGRect
     
-    init(screenSize: CGSize) {
-        self.initialSize = screenSize
+    init(screenRect: CGRect, globalRect: CGRect) {
+        self.screenRect = screenRect
+        self.globalRect = globalRect
         super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
     override func loadView() {
-        self.view = NSView(frame: CGRect(origin: .zero, size: initialSize))
+        self.view = NSView(frame: CGRect(origin: .zero, size: screenRect.size))
         self.view.wantsLayer = true
         self.view.layer?.backgroundColor = NSColor.clear.cgColor
         
@@ -30,8 +32,8 @@ class MetalSnowViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        renderer = SnowRenderer(mtkView: mtkView, screenSize: initialSize)
-        renderer.mtkView(mtkView, drawableSizeWillChange: initialSize)
+        renderer = SnowRenderer(mtkView: mtkView, screenRect: screenRect, globalRect: globalRect)
+        renderer.mtkView(mtkView, drawableSizeWillChange: screenRect.size)
         mtkView.delegate = renderer
         
         let trackingArea = NSTrackingArea(
