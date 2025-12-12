@@ -23,43 +23,17 @@ struct Uniforms {
     float windStrength;
     float minSize;
     float maxSize;
-    float minSpeed;
-    float maxSpeed;
     bool isWindowInteractionEnabled;
-    float particleCount;
 };
+
 
 float random(uint seed, float time) {
     return fract(sin(float(seed) * 12.9898 + time) * 43758.5453);
 }
 
-kernel void initializeSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
-                                  constant Uniforms &uniforms [[buffer(1)]],
-                                  uint id [[thread_position_in_grid]]) {
-    device Snowflake &flake = snowflakes[id];
-    
-    float rndX = random(id, uniforms.time);
-    float rndY = random(id * 2, uniforms.time);
-    float widthSpread = uniforms.screenSize.x + 400.0;
-    
-    flake.position.x = (rndX * widthSpread) - 200.0;
-    flake.position.y = rndY * uniforms.screenSize.y;
-    
-    float sizeRange = uniforms.maxSize - uniforms.minSize;
-    flake.size = uniforms.minSize + random(id + 1, uniforms.time) * sizeRange;
-    
-    float speedRange = uniforms.maxSpeed - uniforms.minSpeed;
-    float speed = uniforms.minSpeed + random(id + 3, uniforms.time) * speedRange;
-    flake.velocity = float2(0, speed);
-    
-    float opacity = max(0.2, flake.size / uniforms.maxSize);
-    flake.color = float4(1.0, 1.0, 1.0, opacity);
-}
-
 kernel void updateSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
-                              constant Uniforms &uniforms [[buffer(1)]],
-                              uint id [[thread_position_in_grid]]) {
-    if (float(id) >= uniforms.particleCount) return;
+                             constant Uniforms &uniforms [[buffer(1)]],
+                             uint id [[thread_position_in_grid]]) {
     
     device Snowflake &flake = snowflakes[id];
     float timeFactor = uniforms.deltaTime * 60.0;
@@ -76,6 +50,7 @@ kernel void updateSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
     
     if (isOnWindow) {
         flake.position += flake.velocity * 0.1 * timeFactor;
+        
         float meltSpeed = 0.1 * timeFactor;
         flake.size -= meltSpeed;
         
@@ -88,10 +63,12 @@ kernel void updateSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
             float sizeRange = uniforms.maxSize - uniforms.minSize;
             flake.size = uniforms.minSize + random(id + 1, uniforms.time) * sizeRange;
         }
+        
     } else {
         flake.position += flake.velocity * timeFactor;
         flake.position.x += (uniforms.windStrength * (flake.size * 0.05)) * timeFactor;
         
+        // Мышь
         float2 mouseDir = flake.position - uniforms.mousePosition;
         float influenceRadius = 50.0;
         float dist = length(mouseDir);
@@ -106,12 +83,12 @@ kernel void updateSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
             float widthSpread = uniforms.screenSize.x + 400.0;
             flake.position.x = (rnd * widthSpread) - 200.0;
         }
-        
-        if (flake.position.x > uniforms.screenSize.x + 200.0) {
-            flake.position.x = -100.0;
-        } else if (flake.position.x < -200.0) {
-            flake.position.x = uniforms.screenSize.x + 100.0;
-        }
+    }
+    
+    if (flake.position.x > uniforms.screenSize.x + 200.0) {
+        flake.position.x = -100.0;
+    } else if (flake.position.x < -200.0) {
+        flake.position.x = uniforms.screenSize.x + 100.0;
     }
 }
 
@@ -121,8 +98,8 @@ float2 convert_to_metal_coordinates(float2 point, float2 viewSize) {
 }
 
 vertex VertexOut vertex_main(const device Snowflake *snowflakes [[buffer(0)]],
-                              constant Uniforms &uniforms [[buffer(1)]],
-                              uint vertexID [[vertex_id]]) {
+                             constant Uniforms &uniforms [[buffer(1)]],
+                             uint vertexID [[vertex_id]]) {
     VertexOut out;
     float2 pos = convert_to_metal_coordinates(snowflakes[vertexID].position, uniforms.screenSize);
     out.position = float4(pos, 0, 1);
@@ -132,12 +109,10 @@ vertex VertexOut vertex_main(const device Snowflake *snowflakes [[buffer(0)]],
 }
 
 fragment float4 fragment_main(VertexOut fragData [[stage_in]],
-                               float2 pointCoord [[point_coord]]) {
+                              float2 pointCoord [[point_coord]]) {
     float dist = length(pointCoord - 0.5);
     float delta = fwidth(dist);
     float alpha = 1.0 - smoothstep(0.45 - delta, 0.45 + delta, dist);
     if (alpha < 0.01) discard_fragment();
-
-    float finalAlpha = fragData.color.a * alpha;
-    return float4(fragData.color.rgb * finalAlpha, finalAlpha);
+    return float4(fragData.color.rgb, fragData.color.a * alpha);
 }

@@ -4,22 +4,20 @@ import MetalKit
 class MetalSnowViewController: NSViewController {
     private let mtkView = MTKView()
     private var renderer: SnowRenderer!
-    private let screenRect: CGRect
-    private let globalRect: CGRect
+    private let initialSize: CGSize
     
-    init(screenRect: CGRect, globalRect: CGRect) {
-        self.screenRect = screenRect
-        self.globalRect = globalRect
+    init(screenSize: CGSize) {
+        self.initialSize = screenSize
         super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
     override func loadView() {
-        self.view = NSView(frame: CGRect(origin: .zero, size: screenRect.size))
+        self.view = NSView(frame: CGRect(origin: .zero, size: initialSize))
         self.view.wantsLayer = true
         self.view.layer?.backgroundColor = NSColor.clear.cgColor
-        
+
         mtkView.frame = self.view.bounds
         mtkView.autoresizingMask = [.width, .height]
         mtkView.device = MTLCreateSystemDefaultDevice()
@@ -32,8 +30,8 @@ class MetalSnowViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        renderer = SnowRenderer(mtkView: mtkView, screenRect: screenRect, globalRect: globalRect)
-        renderer.mtkView(mtkView, drawableSizeWillChange: screenRect.size)
+        renderer = SnowRenderer(mtkView: mtkView, screenSize: initialSize)
+        renderer.mtkView(mtkView, drawableSizeWillChange: initialSize)
         mtkView.delegate = renderer
         
         let trackingArea = NSTrackingArea(

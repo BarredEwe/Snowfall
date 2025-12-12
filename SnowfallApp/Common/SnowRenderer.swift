@@ -12,22 +12,19 @@ struct SnowUniforms {
     var windStrength: Float
     var minSize: Float
     var maxSize: Float
-    var minSpeed: Float
-    var maxSpeed: Float
     var isWindowInteractionEnabled: Bool
-    var particleCount: Float
+    var _padding: (Bool, Bool, Bool) = (false, false, false)
 }
 
-final class SnowRenderer: NSObject {
+class SnowRenderer: NSObject, MTKViewDelegate {
     private var device: MTLDevice!
     private var commandQueue: MTLCommandQueue!
     private var particleBuffer: MTLBuffer!
+    
     private var renderPipelineState: MTLRenderPipelineState!
     private var computePipelineState: MTLComputePipelineState!
-    private var initComputePipelineState: MTLComputePipelineState!
-    private var particleCount: Int = 0
-    private var globalRect: CGRect!
-    private var screenRect: CGRect!
+    
+    private var snowflakes: [Snowflake] = []
     
     var mousePosition: simd_float2 = simd_float2(-1000, -1000)
     var screenSize: simd_float2 = .zero
@@ -35,13 +32,12 @@ final class SnowRenderer: NSObject {
     private var cachedWindowRect: CGRect = .zero
     private var lastWindowCheckTime: TimeInterval = 0
     private let windowCheckInterval: TimeInterval = 0.5
+    
     private var lastDrawTime: CFTimeInterval = CACurrentMediaTime()
     
-    init(mtkView: MTKView, screenRect: CGRect, globalRect: CGRect) {
+    init(mtkView: MTKView, screenSize: CGSize) {
         super.init()
         self.device = mtkView.device
-        self.globalRect = globalRect
-        self.screenRect = screenRect
         self.commandQueue = device.makeCommandQueue()
         mtkView.colorPixelFormat = .bgra8Unorm
         mtkView.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
@@ -49,14 +45,13 @@ final class SnowRenderer: NSObject {
         
         createPipelineStates()
         
-        self.screenSize = SIMD2(Float(screenRect.size.width), Float(screenRect.size.height))
+        self.screenSize = SIMD2(Float(screenSize.width), Float(screenSize.height))
         generateSnowflakes()
     }
     
     private func createPipelineStates() {
         let library = device.makeDefaultLibrary()
         
-        // Render pipeline
         let vertexFunction = library?.makeFunction(name: "vertex_main")
         let fragmentFunction = library?.makeFunction(name: "fragment_main")
         
@@ -78,7 +73,6 @@ final class SnowRenderer: NSObject {
             print("Render Pipeline Error: \(error)")
         }
         
-        // Update compute pipeline
         if let computeFunction = library?.makeFunction(name: "updateSnowflakes") {
             do {
                 computePipelineState = try device.makeComputePipelineState(function: computeFunction)
@@ -86,70 +80,13 @@ final class SnowRenderer: NSObject {
                 print("Compute Pipeline Error: \(error)")
             }
         }
-        
-        // Init compute pipeline
-        if let initFunction = library?.makeFunction(name: "initializeSnowflakes") {
-            do {
-                initComputePipelineState = try device.makeComputePipelineState(function: initFunction)
-            } catch {
-                print("Init Compute Pipeline Error: \(error)")
-            }
-        }
     }
     
-    private func generateSnowflakes() {
+    func generateSnowflakes() {
         let maxSnowflakes = Settings.shared.maxSnowflakes
-        particleCount = maxSnowflakes
-        
-        let bufferSize = maxSnowflakes * MemoryLayout<Snowflake>.stride
-        particleBuffer = device.makeBuffer(length: bufferSize, options: .storageModeShared)
-        
-        initializeParticlesOnGPU()
-    }
-    
-    private func initializeParticlesOnGPU() {
-        guard let commandBuffer = commandQueue.makeCommandBuffer(),
-              let initKernel = initComputePipelineState else { return }
-        
-        var uniforms = makeCurrentUniforms()
-        
-        let computeEncoder = commandBuffer.makeComputeCommandEncoder()!
-        computeEncoder.setComputePipelineState(initKernel)
-        computeEncoder.setBuffer(particleBuffer, offset: 0, index: 0)
-        computeEncoder.setBytes(&uniforms, length: MemoryLayout<SnowUniforms>.stride, index: 1)
-        
-        let width = initKernel.threadExecutionWidth
-        let threadsPerGrid = MTLSize(width: particleCount, height: 1, depth: 1)
-        let threadsPerGroup = MTLSize(width: width, height: 1, depth: 1)
-        computeEncoder.dispatchThreads(threadsPerGrid, threadsPerThreadgroup: threadsPerGroup)
-        computeEncoder.endEncoding()
-        
-        commandBuffer.commit()
-        commandBuffer.waitUntilCompleted()
-    }
-    
-    private func makeCurrentUniforms() -> SnowUniforms {
-        let cachedWindowRectLocalOrigin = WindowInfo().cast(from: globalRect, to: screenRect, point: cachedWindowRect.origin)
-        return SnowUniforms(
-            screenSize: screenSize,
-            mousePosition: mousePosition,
-            windowRect: simd_float4(
-                // cast window origin from global to local
-                Float(cachedWindowRectLocalOrigin.x),
-                Float(cachedWindowRectLocalOrigin.y),
-                Float(cachedWindowRect.width),
-                Float(cachedWindowRect.height)
-            ),
-            time: Float(CACurrentMediaTime()),
-            deltaTime: Float(CACurrentMediaTime() - lastDrawTime),
-            windStrength: Settings.shared.windStrength,
-            minSize: Settings.shared.snowflakeSizeRange.lowerBound,
-            maxSize: Settings.shared.snowflakeSizeRange.upperBound,
-            minSpeed: Settings.shared.snowflakeSpeedRange.lowerBound,
-            maxSpeed: Settings.shared.snowflakeSpeedRange.upperBound,
-            isWindowInteractionEnabled: Settings.shared.windowInteraction,
-            particleCount: Float(particleCount)
-        )
+        snowflakes = (0..<maxSnowflakes).map { _ in Snowflake(for: screenSize) }
+        let bufferSize = snowflakes.count * MemoryLayout<Snowflake>.stride
+        particleBuffer = device.makeBuffer(bytes: snowflakes, length: bufferSize, options: .storageModeShared)
     }
     
     private func updateActiveWindowRect() {
@@ -163,31 +100,31 @@ final class SnowRenderer: NSObject {
             lastWindowCheckTime = currentTime
         }
     }
-}
-
-extension SnowRenderer: MTKViewDelegate {
-    internal func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        self.screenSize = SIMD2(Float(size.width), Float(size.height))
-    }
     
-    internal func draw(in view: MTKView) {
+    func draw(in view: MTKView) {
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let drawable = view.currentDrawable,
               let renderPassDescriptor = view.currentRenderPassDescriptor,
               let computePipeline = computePipelineState else { return }
-
-        if particleCount != Settings.shared.maxSnowflakes {
-            generateSnowflakes()
-        }
         
+        if snowflakes.count != Settings.shared.maxSnowflakes { generateSnowflakes() }
         updateActiveWindowRect()
         
         let currentTime = CACurrentMediaTime()
         let deltaTime = Float(currentTime - lastDrawTime)
         lastDrawTime = currentTime
         
-        var uniforms = makeCurrentUniforms()
-        uniforms.deltaTime = deltaTime
+        var uniforms = SnowUniforms(
+            screenSize: screenSize,
+            mousePosition: mousePosition,
+            windowRect: simd_float4(Float(cachedWindowRect.origin.x), Float(cachedWindowRect.origin.y), Float(cachedWindowRect.width), Float(cachedWindowRect.height)),
+            time: Float(currentTime),
+            deltaTime: deltaTime,
+            windStrength: Settings.shared.windStrength,
+            minSize: Settings.shared.snowflakeSizeRange.lowerBound,
+            maxSize: Settings.shared.snowflakeSizeRange.upperBound,
+            isWindowInteractionEnabled: Settings.shared.windowInteraction
+        )
         
         // Compute
         let computeEncoder = commandBuffer.makeComputeCommandEncoder()!
@@ -196,7 +133,7 @@ extension SnowRenderer: MTKViewDelegate {
         computeEncoder.setBytes(&uniforms, length: MemoryLayout<SnowUniforms>.stride, index: 1)
         
         let width = computePipeline.threadExecutionWidth
-        let threadsPerGrid = MTLSize(width: particleCount, height: 1, depth: 1)
+        let threadsPerGrid = MTLSize(width: snowflakes.count, height: 1, depth: 1)
         let threadsPerGroup = MTLSize(width: width, height: 1, depth: 1)
         computeEncoder.dispatchThreads(threadsPerGrid, threadsPerThreadgroup: threadsPerGroup)
         computeEncoder.endEncoding()
@@ -206,10 +143,14 @@ extension SnowRenderer: MTKViewDelegate {
         renderEncoder.setRenderPipelineState(renderPipelineState)
         renderEncoder.setVertexBuffer(particleBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<SnowUniforms>.stride, index: 1)
-        renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: particleCount)
+        renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: snowflakes.count)
         renderEncoder.endEncoding()
         
         commandBuffer.present(drawable)
         commandBuffer.commit()
+    }
+    
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        self.screenSize = SIMD2(Float(size.width), Float(size.height))
     }
 }
