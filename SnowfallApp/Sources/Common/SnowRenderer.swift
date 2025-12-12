@@ -26,6 +26,8 @@ final class SnowRenderer: NSObject {
     private var computePipelineState: MTLComputePipelineState!
     private var initComputePipelineState: MTLComputePipelineState!
     private var particleCount: Int = 0
+    private var globalRect: CGRect!
+    private var screenRect: CGRect!
     
     var mousePosition: simd_float2 = simd_float2(-1000, -1000)
     var screenSize: simd_float2 = .zero
@@ -35,9 +37,11 @@ final class SnowRenderer: NSObject {
     private let windowCheckInterval: TimeInterval = 0.5
     private var lastDrawTime: CFTimeInterval = CACurrentMediaTime()
     
-    init(mtkView: MTKView, screenSize: CGSize) {
+    init(mtkView: MTKView, screenRect: CGRect, globalRect: CGRect) {
         super.init()
         self.device = mtkView.device
+        self.globalRect = globalRect
+        self.screenRect = screenRect
         self.commandQueue = device.makeCommandQueue()
         mtkView.colorPixelFormat = .bgra8Unorm
         mtkView.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
@@ -45,7 +49,7 @@ final class SnowRenderer: NSObject {
         
         createPipelineStates()
         
-        self.screenSize = SIMD2(Float(screenSize.width), Float(screenSize.height))
+        self.screenSize = SIMD2(Float(screenRect.size.width), Float(screenRect.size.height))
         generateSnowflakes()
     }
     
@@ -125,12 +129,14 @@ final class SnowRenderer: NSObject {
     }
     
     private func makeCurrentUniforms() -> SnowUniforms {
+        let cachedWindowRectLocalOrigin = WindowInfo().cast(from: globalRect, to: screenRect, point: cachedWindowRect.origin)
         return SnowUniforms(
             screenSize: screenSize,
             mousePosition: mousePosition,
             windowRect: simd_float4(
-                Float(cachedWindowRect.origin.x),
-                Float(cachedWindowRect.origin.y),
+                // cast window origin from global to local
+                Float(cachedWindowRectLocalOrigin.x),
+                Float(cachedWindowRectLocalOrigin.y),
                 Float(cachedWindowRect.width),
                 Float(cachedWindowRect.height)
             ),

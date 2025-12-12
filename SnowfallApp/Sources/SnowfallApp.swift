@@ -27,17 +27,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         snowWindows.forEach { $0.close() }
         snowWindows.removeAll()
         
+        var maxX = CGFloat.leastNormalMagnitude
+        var maxY = CGFloat.leastNormalMagnitude
+        
         for screen in NSScreen.screens {
-            createSnowWindow(for: screen)
+            let f = screen.frame
+
+            maxX = max(maxX, f.maxX)
+            maxY = max(maxY, f.maxY)
+        }
+        
+        let globalRect = CGRect(x: 0, y: 0, width: maxX, height: maxY)
+        
+        for screen in NSScreen.screens {
+            createSnowWindow(for: screen, in: globalRect)
         }
     }
     
-    private func createSnowWindow(for screen: NSScreen) {
+    private func createSnowWindow(for screen: NSScreen, in globalRect: CGRect) {
         let screenRect = screen.frame
         
         let window = NSWindow(contentRect: screenRect, styleMask: [.borderless], backing: .buffered, defer: false)
         
-        let metalController = MetalSnowViewController(screenSize: screenRect.size)
+        let metalController = MetalSnowViewController(screenRect: screenRect, globalRect: globalRect)
         window.contentViewController = metalController
         
         window.isOpaque = false
