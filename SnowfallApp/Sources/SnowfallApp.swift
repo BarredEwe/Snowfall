@@ -19,8 +19,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var snowWindows: [NSWindow] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
         setupSnowWindows()
         NotificationCenter.default.addObserver(self, selector: #selector(setupSnowWindows), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(handleSpaceChange), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(handleSpaceChange), name: NSWorkspace.didActivateApplicationNotification, object: nil)
+        updateSnowVisibility()
     }
     
     @objc private func setupSnowWindows() {
@@ -42,6 +46,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         for screen in NSScreen.screens {
             createSnowWindow(for: screen, in: globalRect)
         }
+        
+        updateSnowVisibility()
     }
     
     private func createSnowWindow(for screen: NSScreen, in globalRect: CGRect) {
@@ -56,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.hasShadow = false
         window.backgroundColor = .clear
         window.level = .screenSaver
-        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .transient, .stationary]
+        window.collectionBehavior = [.ignoresCycle, .transient, .stationary]
         window.ignoresMouseEvents = true
         window.isReleasedWhenClosed = false
         window.setFrame(screenRect, display: true)
@@ -64,5 +70,44 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.orderFront(nil)
         
         snowWindows.append(window)
+    }
+    
+    @objc private func handleSpaceChange() {
+        updateSnowVisibility()
+    }
+    
+    private func updateSnowVisibility() {
+        let shouldHide = isAnyFullscreenWindowPresent()
+        for window in snowWindows {
+            if shouldHide {
+                window.orderOut(nil)
+            } else {
+                window.orderFront(nil)
+            }
+        }
+    }
+    
+    private func isAnyFullscreenWindowPresent() -> Bool {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        guard let windowList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return false }
+        
+        let screenSizes = NSScreen.screens.map { $0.frame.size }
+        let tolerance: CGFloat = 2.0
+        
+        for entry in windowList {
+            guard let layer = entry[kCGWindowLayer as String] as? Int, layer == 0,
+                  let bounds = entry[kCGWindowBounds as String] as? [String: Any],
+                  let width = bounds["Width"] as? CGFloat,
+                  let height = bounds["Height"] as? CGFloat else { continue }
+            
+            for screenSize in screenSizes {
+                let widthClose = abs(width - screenSize.width) <= tolerance
+                let heightClose = abs(height - screenSize.height) <= tolerance
+                if widthClose && heightClose {
+                    return true
+                }
+            }
+        }
+        return false
     }
 }
