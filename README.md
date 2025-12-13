@@ -129,7 +129,7 @@ SnowfallApp/
 
 ### Requirements
 - Xcode 15.0+
-- macOS 11.0+ SDK
+- macOS 13.0+ SDK
 - Swift 5.9+
 
 ### Build Steps
