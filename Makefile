@@ -1,125 +1,169 @@
-.PHONY: build archive release clean sha256 test audit install-local uninstall
+name: Release (GitHub + Homebrew + App Store)
 
-APP_NAME = Snowfall
-EXPORT_APP_NAME = SnowfallApp
-SCHEME = SnowfallApp
-BUILD_DIR = build
-ARCHIVE_PATH = $(BUILD_DIR)/$(APP_NAME).xcarchive
-EXPORT_PATH = $(BUILD_DIR)/export
-APP_PATH = $(EXPORT_PATH)/$(EXPORT_APP_NAME).app
-ZIP_PATH = $(BUILD_DIR)/$(APP_NAME).zip
-VERSION = $(shell git describe --tags --abbrev=0 2>/dev/null || echo "0.0.1")
-CASK_FILE = Casks/snowfall.rb
+on:
+  release:
+    types: [published]
 
-build:
-	@echo "Building $(APP_NAME) for release..."
-	xcodebuild -scheme $(SCHEME) \
-		-configuration Release \
-		-archivePath $(ARCHIVE_PATH) \
-		archive
+permissions:
+  contents: write
 
-archive: build
-	@echo "Exporting app..."
-	xcodebuild -exportArchive \
-		-archivePath $(ARCHIVE_PATH) \
-		-exportPath $(EXPORT_PATH) \
-		-exportOptionsPlist ExportOptions.plist
-	
-	@echo "Creating zip archive..."
-	cd $(EXPORT_PATH) && zip -r ../../$(ZIP_PATH) $(EXPORT_APP_NAME).app
-	@echo "Archive created: $(ZIP_PATH)"
+env:
+  APP_NAME: Snowfall
+  XCODEPROJ: Snowfall.xcodeproj
+  SCHEME: SnowfallApp
 
-release: archive
-	@echo "Creating GitHub release..."
-	gh release create $(VERSION) $(ZIP_PATH) \
-		--title "$(APP_NAME) $(VERSION)" \
-		--notes "Release $(VERSION)"
+jobs:
+  build-and-attach-zip:
+    name: Build ZIP for GitHub & Homebrew
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-clean:
-	rm -rf $(BUILD_DIR)
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
-sha256:
-	@echo "SHA256 hash:"
-	@shasum -a 256 $(ZIP_PATH)
+      - name: Build without code signing
+        run: |
+          mkdir -p build/export
+          
+          xcodebuild \
+            -scheme SnowfallApp \
+            -configuration Release \
+            -archivePath build/Snowfall.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+          
+          xcodebuild -exportArchive \
+            -archivePath build/Snowfall.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist ExportOptions.plist
+          
+          cd build/export
+          zip -r ../Snowfall.zip SnowfallApp.app
+          cd ../..
+          
+          if [ ! -f "build/Snowfall.zip" ]; then
+            echo "❌ ZIP file not found!"
+            exit 1
+          fi
+          
+          echo "✅ ZIP created: build/Snowfall.zip"
+          ls -lh build/Snowfall.zip
 
-audit:
-	@echo "🔍 Auditing cask formula..."
-	@if [ -f "$(CASK_FILE)" ]; then \
-		brew audit --cask snowfall; \
-		brew style --fix $(CASK_FILE); \
-	else \
-		echo "❌ Cask file not found at $(CASK_FILE)"; \
-		exit 1; \
-	fi
+      - name: Attach ZIP to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: build/Snowfall.zip
 
-install-local:
-	@echo "📦 Installing from local cask..."
-	@if [ -f "$(CASK_FILE)" ]; then \
-		brew install --cask $(CASK_FILE); \
-	else \
-		echo "❌ Cask file not found at $(CASK_FILE)"; \
-		exit 1; \
-	fi
+  update-homebrew:
+    name: Update Homebrew Cask
+    needs: build-and-attach-zip
+    runs-on: macos-latest
+    steps:
+      - name: Wait for ZIP to be available
+        run: sleep 10
 
-uninstall:
-	@echo "🗑️  Uninstalling..."
-	brew uninstall --cask snowfall
+      - name: Update Homebrew Cask
+        uses: macauley/action-homebrew-bump-cask@v1
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          tap: BarredEwe/homebrew-cask
+          cask: snowfall
 
-test: clean
-	@echo "🚀 Starting full test cycle..."
-	@echo ""
-	@echo "📝 Step 1: Building and archiving..."
-	@$(MAKE) archive
-	@echo ""
-	@echo "📝 Step 2: Calculating SHA256..."
-	@$(MAKE) sha256
-	@echo ""
-	@echo "📝 Step 3: Verifying archive..."
-	@if [ ! -f "$(ZIP_PATH)" ]; then \
-		echo "❌ Archive not found!"; \
-		exit 1; \
-	fi
-	@unzip -l $(ZIP_PATH) | grep -q "$(EXPORT_APP_NAME).app" && \
-		echo "✅ Archive contains $(EXPORT_APP_NAME).app" || \
-		(echo "❌ App not found in archive!" && exit 1)
-	@echo ""
-	@echo "📝 Step 4: Checking archive size..."
-	@ls -lh $(ZIP_PATH) | awk '{print "Archive size: " $$5}'
-	@echo ""
-	@if [ -f "$(CASK_FILE)" ]; then \
-		echo "📝 Step 5: Auditing cask..."; \
-		$(MAKE) audit; \
-	else \
-		echo "⚠️  Step 5: Skipped (cask file not found)"; \
-	fi
-	@echo ""
-	@echo "✨ All checks passed! Ready for release."
+  submit-appstore:
+    name: Submit to App Store
+    needs: build-and-attach-zip
+    runs-on: macos-latest
+    if: github.event.release.prerelease != true && !contains(github.event.release.tag_name, 'test')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-pre-release: test
-	@echo ""
-	@echo "🎯 Pre-release checklist:"
-	@echo "  ✅ Build completed"
-	@echo "  ✅ Archive created"
-	@echo "  ✅ SHA256 calculated"
-	@if [ -f "$(CASK_FILE)" ]; then \
-		echo "  ✅ Cask audited"; \
-	fi
-	@echo ""
-	@echo "Ready to create release with:"
-	@echo "  make release"
-	@echo "or manually with:"
-	@echo "  gh release create $(VERSION) $(ZIP_PATH) --title '$(APP_NAME) $(VERSION)' --notes 'Release $(VERSION)'" 
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
-help:
-	@echo "Available commands:"
-	@echo "  make build          - Build the app"
-	@echo "  make archive        - Build and create zip archive"
-	@echo "  make release        - Create GitHub release"
-	@echo "  make clean          - Clean build directory"
-	@echo "  make sha256         - Calculate SHA256 of archive"
-	@echo "  make audit          - Audit homebrew cask"
-	@echo "  make install-local  - Install from local cask file"
-	@echo "  make uninstall      - Uninstall the app"
-	@echo "  make test           - Run full test cycle"
-	@echo "  make pre-release    - Check everything before release"
-	@echo "  make help           - Show this help"
+      - name: Prepare version and release notes
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
+          
+          python3 - <<'PY'
+          import json
+          import re
+          
+          event = json.load(open("${{ github.event_path }}", "r", encoding="utf-8"))
+          body = (event["release"].get("body") or "").strip()
+          
+          body = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', body)
+          body = re.sub(r'[#*`_]', '', body)
+          body = re.sub(r'\n{3,}', '\n\n', body)
+          
+          if len(body) > 4000:
+              body = body[:3997] + "..."
+          
+          if not body.strip():
+              body = "Bug fixes and performance improvements"
+          
+          with open("release_notes.txt", "w", encoding="utf-8") as f:
+              f.write(body)
+          PY
+          
+          echo "📦 Version: $VERSION"
+          echo "📝 Release notes:"
+          cat release_notes.txt
+
+      - name: Import signing certificate
+        run: |
+          echo "${{ secrets.CERT_P12_BASE64 }}" | base64 --decode > cert.p12
+          security create-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
+          security import cert.p12 -k build.keychain -P "${{ secrets.CERT_P12_PASSWORD }}" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
+
+      - name: Archive for App Store
+        run: |
+          xcodebuild \
+            -project "${{ env.XCODEPROJ }}" \
+            -scheme "${{ env.SCHEME }}" \
+            -configuration Release \
+            -destination "generic/platform=macOS" \
+            -archivePath build/AppStore.xcarchive \
+            archive
+
+      - name: Export PKG for App Store
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/AppStore.xcarchive \
+            -exportPath build/appstore \
+            -exportOptionsPlist ExportOptionsAppStore.plist
+
+          PKG_PATH="$(find build/appstore -name '*.pkg' | head -n 1)"
+          
+          if [ -z "$PKG_PATH" ]; then
+            echo "❌ PKG not found!"
+            find build/appstore -type f
+            exit 1
+          fi
+          
+          echo "PKG_PATH=$PKG_PATH" >> "$GITHUB_ENV"
+          echo "✅ PKG created: $PKG_PATH"
+          ls -lh "$PKG_PATH"
+
+      - name: Upload to App Store Connect
+        run: |
+          xcrun altool --upload-app \
+            --type macos \
+            --file "$PKG_PATH" \
+            --username "${{ secrets.APPLE_ID }}" \
+            --password "${{ secrets.APP_SPECIFIC_PASSWORD }}" \
+            --asc-provider "${{ secrets.TEAM_ID }}"
