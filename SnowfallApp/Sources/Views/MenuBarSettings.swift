@@ -24,7 +24,7 @@ struct MenuBarSettings: View {
                 }
                 .labelsHidden()
                 .frame(width: 160)
-                .onChange(of: selectedPreset) { _, newPreset in
+                .onChange(of: selectedPreset) { newPreset in
                     if newPreset != .custom {
                         applyPreset(newPreset)
                     } else {
@@ -138,13 +138,13 @@ struct MenuBarSettings: View {
         }
         .padding()
         .frame(width: 300)
-        .onChange(of: minSpeed) { _, _ in updateSettings() }
-        .onChange(of: maxSpeed) { _, _ in updateSettings() }
-        .onChange(of: minSize) { _, _ in updateSettings() }
-        .onChange(of: maxSize) { _, _ in updateSettings() }
-        .onChange(of: maxSnowflakes) { _, _ in updateSettings() }
-        .onChange(of: windStrength) { _, _ in updateSettings() }
-        .onChange(of: windowInteraction) { _, val in
+        .onChange(of: minSpeed) { _ in updateSettings() }
+        .onChange(of: maxSpeed) { _ in updateSettings() }
+        .onChange(of: minSize) { _ in updateSettings() }
+        .onChange(of: maxSize) { _ in updateSettings() }
+        .onChange(of: maxSnowflakes) { _ in updateSettings() }
+        .onChange(of: windStrength) { _ in updateSettings() }
+        .onChange(of: windowInteraction) { val in
             Settings.shared.windowInteraction = val
             Settings.shared.save()
         }
