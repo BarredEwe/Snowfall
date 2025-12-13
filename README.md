@@ -39,7 +39,10 @@ A lightweight menubar app that brings winter magic to your desktop with GPU-acce
 
 ## 📦 Installation
 
-### Homebrew (Recommended)
+### App Store (Recommended)
+[![Download on the App Store](https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-mac-app-store.svg)](https://apps.apple.com/us/app/snowfall-desktop/id6756177814)
+
+### Homebrew 
 Get automatic updates via [Homebrew](https://brew.sh/):
 
 ```
@@ -51,10 +54,6 @@ brew install --cask barredewe/cask/snowfall
 2. Unzip and move `Snowfall.app` to `/Applications`
 3. Launch and grant Screen Recording permission when prompted
 
-
-### App Store
-
-`// TODO`
 
 ---
 
