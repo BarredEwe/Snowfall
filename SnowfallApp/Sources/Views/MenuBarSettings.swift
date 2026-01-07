@@ -19,7 +19,8 @@ struct MenuBarSettings: View {
                 Spacer()
                 Picker("", selection: $selectedPreset) {
                     ForEach(SnowPreset.allCases, id: \.self) { preset in
-                        Text(preset.rawValue).tag(preset)
+                        Text(LocalizedStringKey(preset.titleKey))
+                            .tag(preset)
                     }
                 }
                 .labelsHidden()
