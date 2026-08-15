@@ -11,7 +11,7 @@ A lightweight menubar app that brings winter magic to your desktop with GPU-acce
 [![macOS](https://img.shields.io/badge/macOS-11.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 [![Metal](https://img.shields.io/badge/Metal-GPU-green.svg)](https://developer.apple.com/metal/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![GitHub License](https://img.shields.io/github/license/barredewe/snowfall)
 
 </div>
 
