@@ -8,5 +8,7 @@
 	<true/>
 	<key>NSRequiresAquaSystemAppearance</key>
 	<false/>
+	<key>LSUIElement</key>
+	<true/>
 </dict>
 </plist>
