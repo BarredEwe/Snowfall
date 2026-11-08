@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-08",
+  "machine": {
+    "chip": "Apple M3 Max",
+    "cpu_cores": 14,
+    "gpu_cores": 30,
+    "memory_gib": 36,
+    "macos": "26.2",
+    "display_pixels": [
+      3456,
+      2234
+    ],
+    "display_points": [
+      1728,
+      1117
+    ],
+    "display_count": 1
+  },
+  "baseline_commit": "a6f56f0e037b77aa827037be7afae3d297f140d8",
+  "method": {
+    "configuration": "Release, arm64, SNOWFALL_PROFILING",
+    "warmup_seconds": 10,
+    "cpu_samples": 20,
+    "sample_interval_seconds": 1,
+    "particles": 2000,
+    "window_interaction": true,
+    "gpu_unit": "elapsed command-buffer GPU milliseconds per wall-clock second; excludes WindowServer"
+  },
+  "baseline": {
+    "cpu_mean_percent_one_core": 4.37,
+    "cpu_median": 4.4,
+    "cpu_min": 2.9,
+    "cpu_max": 7.4,
+    "samples": 20,
+    "footprint_mib": 475.64151763916016,
+    "metal": {
+      "drawable_height": 2234,
+      "drawable_width": 3456,
+      "fps": 59.97466068700827,
+      "gpu_ms_per_frame": 1.9118310909964316,
+      "gpu_ms_per_second": 114.64659102042046,
+      "metal_allocated_mib": 91.34375,
+      "particles": 2000
+    }
+  },
+  "optimized": {
+    "cpu_mean_percent_one_core": 3.38,
+    "cpu_median": 3.55,
+    "cpu_min": 1.7,
+    "cpu_max": 5.8,
+    "samples": 20,
+    "footprint_mib": 249.29772186279297,
+    "metal": {
+      "drawable_height": 1117,
+      "drawable_width": 1728,
+      "fps": 29.999958210077622,
+      "gpu_ms_per_frame": 0.04938523464415974,
+      "gpu_ms_per_second": 1.481575731702418,
+      "metal_allocated_mib": 16.125,
+      "particles": 2000
+    }
+  },
+  "paused": {
+    "paused_cpu_mean_percent_one_core": 0.49,
+    "paused_cpu_max": 1.8,
+    "paused_footprint_mib": 25.532119750976562,
+    "gpu_reports_during_pause": 0,
+    "resumed_footprint_mib": 241.03211975097656
+  }
+}
