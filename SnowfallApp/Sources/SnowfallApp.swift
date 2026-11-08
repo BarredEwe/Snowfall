@@ -13,7 +13,6 @@ struct SnowfallApp: App {
 }
 
 import Cocoa
-import MetalKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var snowWindows: [NSWindow] = []

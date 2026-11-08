@@ -28,6 +28,8 @@ final class SnowRenderer: NSObject {
     private var particleCount: Int = 0
     private var globalRect: CGRect!
     private var screenRect: CGRect!
+    private var appliedSpeedRange: ClosedRange<Float> = Settings.shared.snowflakeSpeedRange
+    private var appliedSizeRange: ClosedRange<Float> = Settings.shared.snowflakeSizeRange
     
     var mousePosition: simd_float2 = simd_float2(-1000, -1000)
     var screenSize: simd_float2 = .zero
@@ -108,6 +110,8 @@ final class SnowRenderer: NSObject {
     }
     
     private func initializeParticlesOnGPU() {
+        appliedSpeedRange = Settings.shared.snowflakeSpeedRange
+        appliedSizeRange = Settings.shared.snowflakeSizeRange
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let initKernel = initComputePipelineState else { return }
         
@@ -178,6 +182,9 @@ extension SnowRenderer: MTKViewDelegate {
 
         if particleCount != Settings.shared.maxSnowflakes {
             generateSnowflakes()
+        } else if Settings.shared.snowflakeSpeedRange != appliedSpeedRange
+            || Settings.shared.snowflakeSizeRange != appliedSizeRange {
+            initializeParticlesOnGPU()
         }
         
         updateActiveWindowRect()

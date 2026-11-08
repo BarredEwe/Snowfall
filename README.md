@@ -11,7 +11,7 @@ A lightweight menubar app that brings winter magic to your desktop with GPU-acce
 [![macOS](https://img.shields.io/badge/macOS-11.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 [![Metal](https://img.shields.io/badge/Metal-GPU-green.svg)](https://developer.apple.com/metal/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![GitHub License](https://img.shields.io/github/license/barredewe/snowfall)
 
 </div>
 
@@ -39,7 +39,10 @@ A lightweight menubar app that brings winter magic to your desktop with GPU-acce
 
 ## 📦 Installation
 
-### Homebrew (Recommended)
+### App Store (Recommended)
+[![Download on the App Store](https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-mac-app-store.svg)](https://apps.apple.com/us/app/snowfall-desktop/id6756177814)
+
+### Homebrew 
 Get automatic updates via [Homebrew](https://brew.sh/):
 
 ```
@@ -51,10 +54,6 @@ brew install --cask barredewe/cask/snowfall
 2. Unzip and move `Snowfall.app` to `/Applications`
 3. Launch and grant Screen Recording permission when prompted
 
-
-### App Store
-
-`// TODO`
 
 ---
 
@@ -129,7 +128,7 @@ SnowfallApp/
 
 ### Requirements
 - Xcode 15.0+
-- macOS 11.0+ SDK
+- macOS 13.0+ SDK
 - Swift 5.9+
 
 ### Build Steps

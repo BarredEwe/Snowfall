@@ -6,10 +6,23 @@ enum DisplayMode: String, CaseIterable, Codable {
 }
 
 enum SnowPreset: String, CaseIterable, Codable {
-    case light = "Лёгкий снег"
-    case comfort = "Комфортный фон"
-    case blizzard = "Метель"
-    case custom = "Свой"
+    case light
+    case comfort
+    case blizzard
+    case custom
+    
+    var titleKey: String {
+        switch self {
+        case .light:
+            "snow_preset.light"
+        case .comfort:  
+            "snow_preset.comfort"
+        case .blizzard: 
+            "snow_preset.blizzard"
+        case .custom:
+            "snow_preset.custom"
+        }
+    }
 }
 
 final class Settings: Codable {
