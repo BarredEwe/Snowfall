@@ -55,7 +55,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.hasShadow = false
         window.backgroundColor = .clear
         window.level = .screenSaver
-        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .transient, .stationary]
+        // AppKit keeps desktop overlays out of other apps' full-screen Spaces.
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenPrimary, .ignoresCycle, .stationary]
         window.ignoresMouseEvents = true
         window.isReleasedWhenClosed = false
         window.setFrame(screenRect, display: true)
