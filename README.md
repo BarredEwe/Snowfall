@@ -8,7 +8,7 @@ A lightweight menubar app that brings winter magic to your desktop with GPU-acce
 
 [Features](#-features) • [Installation](#-installation) • [Demo](#-demo) • [Configuration](#%EF%B8%8F-configuration) • [Privacy](#-privacy)
 
-[![macOS](https://img.shields.io/badge/macOS-11.0+-blue.svg)](https://www.apple.com/macos/)
+[![macOS](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 [![Metal](https://img.shields.io/badge/Metal-GPU-green.svg)](https://developer.apple.com/metal/)
 ![GitHub License](https://img.shields.io/github/license/barredewe/snowfall)
@@ -98,7 +98,7 @@ Toggle collision physics for performance-critical workflows. When enabled:
 - **Language**: Swift 5.9+ with SwiftUI
 - **Graphics**: Metal API for compute & render pipelines
 - **Physics**: Custom particle system with SIMD2 vectors
-- **Platform**: macOS 11.0+ (Big Sur and later)
+- **Platform**: macOS 13.0+ (Ventura and later)
 
 ### Key Components
 
@@ -117,10 +117,15 @@ SnowfallApp/
 ```
 
 ### Performance Optimization
-- **Compute Shader**: Parallel particle updates on GPU
+- **Lightweight Physics**: CPU simulation with immutable, double-buffered particle snapshots
 - **Instanced Rendering**: Single draw call for all particles
-- **Adaptive Caching**: Window positions refreshed every 500ms
+- **Shared Window Cache**: One window-list query every 500ms across all displays
 - **Point Primitives**: Efficient anti-aliased circles via fragment shader
+- **Bounded Render Surfaces**: At most 2.07 million drawable pixels per display; physics remains independent of render resolution
+- **Energy-Aware Frame Rate**: 30 FPS normally, 20 FPS in Low Power Mode or under serious thermal pressure
+- **Idle Rendering**: Stops when the overlay is hidden, the display sleeps, or the user session becomes inactive
+
+Performance measurements and reproduction steps: [docs/performance.md](docs/performance.md).
 
 ---
 
@@ -139,7 +144,7 @@ git clone https://github.com/barredewe/snowfall.git
 cd snowfall
 
 # Open in Xcode
-open Snowfall.xcodeproj
+open SnowfallApp.xcodeproj
 
 # Build & Run (⌘R)
 ```

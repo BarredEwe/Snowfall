@@ -27,93 +27,8 @@ struct Uniforms {
     float maxSpeed;
     bool isWindowInteractionEnabled;
     float particleCount;
+    float renderScale;
 };
-
-float random(uint seed, float time) {
-    return fract(sin(float(seed) * 12.9898 + time) * 43758.5453);
-}
-
-kernel void initializeSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
-                                  constant Uniforms &uniforms [[buffer(1)]],
-                                  uint id [[thread_position_in_grid]]) {
-    device Snowflake &flake = snowflakes[id];
-    
-    float rndX = random(id, uniforms.time);
-    float rndY = random(id * 2, uniforms.time);
-    float widthSpread = uniforms.screenSize.x + 400.0;
-    
-    flake.position.x = (rndX * widthSpread) - 200.0;
-    flake.position.y = rndY * uniforms.screenSize.y;
-    
-    float sizeRange = uniforms.maxSize - uniforms.minSize;
-    flake.size = uniforms.minSize + random(id + 1, uniforms.time) * sizeRange;
-    
-    float speedRange = uniforms.maxSpeed - uniforms.minSpeed;
-    float speed = uniforms.minSpeed + random(id + 3, uniforms.time) * speedRange;
-    flake.velocity = float2(0, speed);
-    
-    float opacity = max(0.2, flake.size / uniforms.maxSize);
-    flake.color = float4(1.0, 1.0, 1.0, opacity);
-}
-
-kernel void updateSnowflakes(device Snowflake *snowflakes [[buffer(0)]],
-                              constant Uniforms &uniforms [[buffer(1)]],
-                              uint id [[thread_position_in_grid]]) {
-    if (float(id) >= uniforms.particleCount) return;
-    
-    device Snowflake &flake = snowflakes[id];
-    float timeFactor = uniforms.deltaTime * 60.0;
-    
-    bool isOnWindow = false;
-    if (uniforms.isWindowInteractionEnabled) {
-        if (flake.position.x >= uniforms.windowRect.x &&
-            flake.position.x <= uniforms.windowRect.x + uniforms.windowRect.z &&
-            flake.position.y >= uniforms.windowRect.y &&
-            flake.position.y <= uniforms.windowRect.y + uniforms.windowRect.w) {
-            isOnWindow = true;
-        }
-    }
-    
-    if (isOnWindow) {
-        flake.position += flake.velocity * 0.1 * timeFactor;
-        float meltSpeed = 0.1 * timeFactor;
-        flake.size -= meltSpeed;
-        
-        if (flake.size <= 0.5) {
-            flake.position.y = -10.0;
-            float rnd = random(id, uniforms.time);
-            float widthSpread = uniforms.screenSize.x + 400.0;
-            flake.position.x = (rnd * widthSpread) - 200.0;
-            
-            float sizeRange = uniforms.maxSize - uniforms.minSize;
-            flake.size = uniforms.minSize + random(id + 1, uniforms.time) * sizeRange;
-        }
-    } else {
-        flake.position += flake.velocity * timeFactor;
-        flake.position.x += (uniforms.windStrength * (flake.size * 0.05)) * timeFactor;
-        
-        float2 mouseDir = flake.position - uniforms.mousePosition;
-        float influenceRadius = 50.0;
-        float dist = length(mouseDir);
-        if (dist < influenceRadius) {
-            float force = (influenceRadius - dist) / influenceRadius;
-            flake.position += normalize(mouseDir) * force * 20.0 * timeFactor;
-        }
-        
-        if (flake.position.y > uniforms.screenSize.y + flake.size) {
-            flake.position.y = -flake.size;
-            float rnd = random(id, uniforms.time);
-            float widthSpread = uniforms.screenSize.x + 400.0;
-            flake.position.x = (rnd * widthSpread) - 200.0;
-        }
-        
-        if (flake.position.x > uniforms.screenSize.x + 200.0) {
-            flake.position.x = -100.0;
-        } else if (flake.position.x < -200.0) {
-            flake.position.x = uniforms.screenSize.x + 100.0;
-        }
-    }
-}
 
 float2 convert_to_metal_coordinates(float2 point, float2 viewSize) {
     float2 inverseViewSize = 1.0 / viewSize;
@@ -126,7 +41,7 @@ vertex VertexOut vertex_main(const device Snowflake *snowflakes [[buffer(0)]],
     VertexOut out;
     float2 pos = convert_to_metal_coordinates(snowflakes[vertexID].position, uniforms.screenSize);
     out.position = float4(pos, 0, 1);
-    out.pointSize = snowflakes[vertexID].size;
+    out.pointSize = snowflakes[vertexID].size * uniforms.renderScale;
     out.color = snowflakes[vertexID].color;
     return out;
 }

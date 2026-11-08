@@ -1,15 +1,27 @@
 import Cocoa
 import CoreGraphics
+import QuartzCore
 
 class WindowInfo {
+    static let shared = WindowInfo()
     private let statusBarSize = 38.0
     private let lauchpadLayer = 27
+    private var lastCheckTime: CFTimeInterval = -.infinity
+    private var cachedRect: CGRect?
 
     func getActiveWindowRect() -> CGRect? {
+        let now = CACurrentMediaTime()
+        if now - lastCheckTime < 0.5 { return cachedRect }
+        lastCheckTime = now
+        cachedRect = queryActiveWindowRect()
+        return cachedRect
+    }
+
+    private func queryActiveWindowRect() -> CGRect? {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         guard let windowListInfo = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return nil }
 
-        guard !isLaunchpadVisible() else { return nil }
+        guard !isLaunchpadVisible(in: windowListInfo) else { return nil }
 
         for windowInfo in windowListInfo {
             guard let layer = windowInfo[kCGWindowLayer as String] as? Int,
@@ -28,10 +40,7 @@ class WindowInfo {
         return nil
     }
 
-    func isLaunchpadVisible() -> Bool {
-        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
-        let windowList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? []
-
+    private func isLaunchpadVisible(in windowList: [[String: Any]]) -> Bool {
         for window in windowList {
             if let ownerName = window["kCGWindowOwnerName"] as? String, ownerName == "Dock",
                let layer = window["kCGWindowLayer"] as? Int {

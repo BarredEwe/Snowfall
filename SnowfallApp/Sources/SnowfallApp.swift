@@ -20,6 +20,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupSnowWindows()
         NotificationCenter.default.addObserver(self, selector: #selector(setupSnowWindows), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        #if SNOWFALL_PROFILING
+        if ProcessInfo.processInfo.arguments.contains("--profile-pause") {
+            for (delay, name) in [(10.0, NSWorkspace.screensDidSleepNotification),
+                                  (30.0, NSWorkspace.screensDidWakeNotification)] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    NSWorkspace.shared.notificationCenter.post(name: name, object: nil)
+                    print("PROFILE_LIFECYCLE \(name.rawValue)")
+                    fflush(stdout)
+                }
+            }
+        }
+        #endif
     }
     
     @objc private func setupSnowWindows() {
@@ -48,7 +60,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let window = NSWindow(contentRect: screenRect, styleMask: [.borderless], backing: .buffered, defer: false)
         
-        let metalController = MetalSnowViewController(screenRect: screenRect, globalRect: globalRect)
+        let metalController = MetalSnowViewController(screenRect: screenRect, globalRect: globalRect,
+                                                     backingScaleFactor: screen.backingScaleFactor)
         window.contentViewController = metalController
         
         window.isOpaque = false
